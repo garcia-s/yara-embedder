@@ -53,7 +53,7 @@ fn keyboard_keymap_handler(
 
     defer _ = std.os.linux.munmap(m, size);
 
-    const keymap: *c.struct_xkb_keymap = c.xkb_keymap_new_from_string(
+    e.xkb.keymap = c.xkb_keymap_new_from_string(
         e.xkb.context,
         @ptrCast(m),
         c.XKB_KEYMAP_FORMAT_TEXT_V1,
@@ -63,9 +63,7 @@ fn keyboard_keymap_handler(
         return;
     };
 
-    defer c.xkb_keymap_unref(keymap);
-
-    e.xkb.state = c.xkb_state_new(keymap) orelse {
+    e.xkb.state = c.xkb_state_new(e.xkb.keymap) orelse {
         std.debug.print("XKB State failed \n", .{});
         return;
     };
@@ -91,6 +89,7 @@ fn keyboard_keymap_handler(
     };
 
     defer alloc.free(clocale);
+
     const compose_table = c.xkb_compose_table_new_from_locale(
         e.xkb.context,
         @ptrCast(clocale),
@@ -109,16 +108,12 @@ fn keyboard_keymap_handler(
         return;
     };
 
-    // GLFW does this, IDK why but, they save the indexes but IDK if these really change
-    //TODO: Friendly reminder to check how to do this. We still have a bunch of keyboard bugs
-    //
-    //
-    // _glfw.wl.xkb.controlIndex = xkb_keymap_mod_get_index(_glfw.wl.xkb.keymap, "Control");
-    // _glfw.wl.xkb.altIndex = xkb_keymap_mod_get_index(_glfw.wl.xkb.keymap, "Mod1");
-    // _glfw.wl.xkb.shiftIndex = xkb_keymap_mod_get_index(_glfw.wl.xkb.keymap, "Shift");
-    // _glfw.wl.xkb.superIndex = xkb_keymap_mod_get_index(_glfw.wl.xkb.keymap, "Mod4");
-    // _glfw.wl.xkb.capsLockIndex = xkb_keymap_mod_get_index(_glfw.wl.xkb.keymap, "Lock");
-    // _glfw.wl.xkb.numLockIndex = xkb_keymap_mod_get_index(_glfw.wl.xkb.keymap, "Mod2");
+    e.xkb.caps = c.xkb_keymap_mod_get_index(e.xkb.keymap, "Lock");
+    e.xkb.num = c.xkb_keymap_mod_get_index(e.xkb.keymap, "Mod2");
+    e.xkb.ctrl = c.xkb_keymap_mod_get_index(e.xkb.keymap, "Control");
+    e.xkb.alt = c.xkb_keymap_mod_get_index(e.xkb.keymap, "Mod1");
+    e.xkb.shift = c.xkb_keymap_mod_get_index(e.xkb.keymap, "Shift");
+    e.xkb.supr = c.xkb_keymap_mod_get_index(e.xkb.keymap, "Mod3");
 
     e.xkb.fd = fd;
     e.xkb.size = size;

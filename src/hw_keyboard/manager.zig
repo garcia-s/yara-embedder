@@ -2,7 +2,15 @@ const c = @import("../c_imports.zig").c;
 const std = @import("std");
 const EditingValue = @import("../textinput/messages.zig").EditingValue;
 const XKBState = @import("../keyboard/xkb.zig").XKBState;
-const udev_to_hid = @import("../keyboard/udev_hid.zig").udev_to_hid;
+const keymap = @import("../keyboard/keymap.zig");
+
+const message =
+    \\  {
+    \\      "keymap": "linux",
+    \\      "toolkit": "gtk",
+    \\      "type": "keydown"
+    \\  }
+;
 
 pub const HWKeyboardManager = struct {
     xkb: *XKBState = undefined,
@@ -28,26 +36,49 @@ pub const HWKeyboardManager = struct {
         state: u32,
         engine: *c.FlutterEngine,
     ) void {
-        std.debug.print("Running key", .{});
         self.event.type = switch (state) {
             0 => c.kFlutterKeyEventTypeUp,
             1 => c.kFlutterKeyEventTypeDown,
             2 => c.kFlutterKeyEventTypeRepeat,
             else => 0,
         };
+        self.event.synthesized = true;
+        self.event.timestamp = @as(f64, @floatFromInt(c.FlutterEngineGetCurrentTime())) / 1000.0;
+        // self.event.physical = 0x0007002b;
+        self.event.physical = @intCast(keymap.udev_to_physical(key));
+        // self.event.logical = 0x00100000009;
+        self.event.logical = keymap.xkb_to_logical(
+            c.xkb_state_key_get_one_sym(
+                self.xkb.state,
+                key + 8,
+            ),
+        );
 
-        // self.event.timestamp = c.FlutterEngineGetCurrentTime();
-        self.event.physical = @intCast(udev_to_hid(key));
-        self.event.logical = c.xkb_state_key_get_one_sym(
-            self.xkb.state,
-            key + 8,
+        std.debug.print(
+            "Logical: {d} \nPhysical: {d} \nkey: {d}\n",
+            .{ self.event.logical, self.event.physical, key },
         );
 
         _ = c.FlutterEngineSendKeyEvent(
             engine.*,
             &self.event,
+            &key_event_callback,
             null,
-            null,
+        );
+
+        _ = c.FlutterEngineSendPlatformMessage(
+            engine.*,
+            &c.FlutterPlatformMessage{
+                .struct_size = @sizeOf(c.FlutterPlatformMessage),
+                .channel = "flutter/keyevent",
+                .message = message,
+                .message_size = message.len,
+            },
         );
     }
 };
+
+fn key_event_callback(correct: bool, _: ?*anyopaque) callconv(.C) void {
+    if (!correct) std.debug.print("Key data was not sent correctly\n", .{});
+    return;
+}
