@@ -1,7 +1,6 @@
-const c = @import("../c_imports.zig").c;
+const YaraEngine = @import("../engine.zig").YaraEngine;
+const c = @import("../utils/c_imports.zig").c;
 const std = @import("std");
-const WindowConfig = @import("config.zig").WindowConfig;
-const FLWindow = @import("window.zig").FLWindow;
 
 const config_attrib = [_]c.EGLint{
     c.EGL_RENDERABLE_TYPE, c.EGL_OPENGL_ES2_BIT,
@@ -21,13 +20,14 @@ const ctx_attrib: [*c]c.EGLint = @constCast(&[_]c.EGLint{
 });
 
 pub const WindowManager = struct {
+    //move to an inmutable struct
     mux: std.Thread.RwLock = std.Thread.RwLock{},
     gpa: std.heap.GeneralPurposeAllocator(.{}) =
         std.heap.GeneralPurposeAllocator(.{}){},
 
-    ///Wayland Compositor
-    compositor: ?*c.wl_compositor = null,
+    engine: ?*YaraEngine = null,
 
+    compositor: ?*c.wl_compositor = null,
     layer_shell: ?*c.zwlr_layer_shell_v1 = null,
     ///EGL display
     display: c.EGLDisplay = null,
@@ -35,17 +35,8 @@ pub const WindowManager = struct {
     context: c.EGLContext = undefined,
     resource_context: c.EGLContext = undefined,
 
-    ///Map used to control the FLWindow instances
-    ///To resize, move, close and create windows
-    windows: std.AutoHashMap(i64, *FLWindow) = undefined,
-
-    ///The ammount of current windows alive in the current flutter
-    window_count: i64 = 0,
-
-    pub fn init(self: *WindowManager, display: *c.wl_display) !void {
-        const alloc = self.gpa.allocator();
-
-        self.windows = std.AutoHashMap(i64, *FLWindow).init(alloc);
+    pub fn init(self: *WindowManager, engine: *YaraEngine) !void {
+        self.engine = engine;
 
         if (self.compositor == null)
             return error.UninitializedWaylandCompositor;
@@ -54,21 +45,25 @@ pub const WindowManager = struct {
             return error.UninitializedLayerShell;
 
         self.display = c.eglGetDisplay(
-            display,
+            engine.platform.display.?,
         );
 
         if (self.display == c.EGL_NO_DISPLAY)
             return error.eglGetDisplayFailed;
 
+        std.debug.print("Got the EGL display\n", .{});
+
         if (c.eglInitialize(self.display, null, null) != c.EGL_TRUE)
             return error.eglInitializeFailed;
+
+        std.debug.print("Initialized EGL properly\n", .{});
 
         if (c.eglBindAPI(c.EGL_OPENGL_ES_API) != c.EGL_TRUE) {
             return error.eglbindfailed;
         }
+        std.debug.print("API Bind was successful\n", .{});
 
         var num_config: c.EGLint = 0;
-
         const conf_result = c.eglChooseConfig(
             self.display,
             &config_attrib,
@@ -93,6 +88,8 @@ pub const WindowManager = struct {
             return error.EglContextFaield;
         }
 
+        std.debug.print("Successfully created EGL Context\n", .{});
+
         self.resource_context = c.eglCreateContext(
             self.display,
             self.config,
@@ -104,33 +101,7 @@ pub const WindowManager = struct {
             std.debug.print("Failed to create the EGL resource_context\n", .{});
             return error.EglResourceContextFailed;
         }
-    }
 
-    pub fn add_view(self: *WindowManager, window: *FLWindow) !void {
-        //TODO: Might need to move this to a windows manager struct
-        self.mux.lock();
-        defer self.mux.unlock();
-
-        try self.windows.put(self.window_count, window);
-        self.window_count += 1;
-    }
-
-    pub fn remove_view(self: *WindowManager, view_id: i64) !void {
-        self.mux.lock();
-        defer self.mux.unlock();
-
-        var window: *FLWindow = self.windows.get(view_id) orelse {
-            return error.ViewIdNotFound;
-        };
-
-        try window.destroy(self.display);
-        _ = self.windows.remove(view_id);
-        self.window_count -= 1;
-    }
-
-    pub fn get(self: *WindowManager, id: i64) ?*FLWindow {
-        self.mux.lock();
-        defer self.mux.unlock();
-        return self.windows.get(id);
+        std.debug.print("Successfully created EGL Resource Context\n", .{});
     }
 };

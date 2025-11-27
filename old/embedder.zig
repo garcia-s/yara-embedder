@@ -23,41 +23,20 @@ const task = @import("flutter/task_runners.zig");
 pub const FLEmbedder = struct {
     gpa: std.heap.GeneralPurposeAllocator(.{}) =
         std.heap.GeneralPurposeAllocator(.{}){},
-    ///Wayland display
     wl_display: *c.wl_display = undefined,
-
-    ///Wayland Registry
     registry: *c.wl_registry = undefined,
-
-    //Wayland Seat
     seat: ?*c.struct_wl_seat = null,
-
-    ///A struct to manage everything related to egl-wayland
     windows: WindowManager = WindowManager{},
-
-    ///Flutter engine instance
     engine: c.FlutterEngine = undefined,
-
-    ///Manager for the pointer events
     pointer: PointerManager = PointerManager{},
-
-    ///Manager for keyboard events
     keyboard: KeyboardManager = KeyboardManager{},
-
     textinput: InputManager = InputManager{},
-
-    ///View id to wayland surface pointer map,
-    ///Flutter's custom task runner instance
     runner: task.FLTaskRunner = task.FLTaskRunner{},
-
-    ///Map used to find the correct view_id from a surface pointer
-    ///Used while mapping the pointer coordinates to the correct surface
     view_surface_map: std.AutoHashMap(*c.struct_wl_surface, i64) = undefined,
 
     pub fn init(self: *FLEmbedder, path: *[:0]u8) !void {
         const alloc = self.gpa.allocator();
 
-        //TODO: GET ALL THE SCREENS
         self.wl_display = c.wl_display_connect(null) orelse {
             return error.WaylandConnectionFailed;
         };
@@ -71,7 +50,6 @@ pub const FLEmbedder = struct {
             &wl_registry_listener,
             self,
         );
-        //Check if this should be done like this
         if (reg_result < 0) {
             return error.MissingGlobalObjects;
         }
