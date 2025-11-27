@@ -24,13 +24,13 @@ pub const FLWindow = struct {
     ) !void {
         self.config = view.*;
         self.config.height = 33;
-        self.wl_surface = c.wl_compositor_create_surface(manager.compositor) orelse {
+        self.wl_surface = c.wl_compositor_create_surface(manager.compositor.?) orelse {
             std.debug.print("failed to get a wayland surface\n", .{});
             return error.SurfaceCreationFailed;
         };
 
         self.wl_layer_surface = c.zwlr_layer_shell_v1_get_layer_surface(
-            manager.layer_shell,
+            manager.layer_shell.?,
             self.wl_surface,
             null,
             view.layer,

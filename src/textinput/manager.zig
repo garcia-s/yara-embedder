@@ -85,7 +85,7 @@ pub const InputManager = struct {
     // }
 
     fn handle_char(self: *InputManager, engine: c.FlutterEngine, scancode: u32) void {
-        var keysyms: [*c]c.xkb_keysym_t = undefined;
+        var keysyms: [*c]const c.xkb_keysym_t = undefined;
         const keycode = scancode + 8;
         // const sym = self.compose_symbol(key + 8);
         if (c.xkb_state_key_get_syms(self.xkb.state, keycode, &keysyms) != 1)

@@ -26,9 +26,9 @@ pub const WindowManager = struct {
         std.heap.GeneralPurposeAllocator(.{}){},
 
     ///Wayland Compositor
-    compositor: *c.wl_compositor = undefined,
+    compositor: ?*c.wl_compositor = null,
 
-    layer_shell: *c.zwlr_layer_shell_v1 = undefined,
+    layer_shell: ?*c.zwlr_layer_shell_v1 = null,
     ///EGL display
     display: c.EGLDisplay = null,
     config: c.EGLConfig = null,
@@ -47,10 +47,10 @@ pub const WindowManager = struct {
 
         self.windows = std.AutoHashMap(i64, *FLWindow).init(alloc);
 
-        if (self.compositor == undefined)
+        if (self.compositor == null)
             return error.UninitializedWaylandCompositor;
 
-        if (self.layer_shell == undefined)
+        if (self.layer_shell == null)
             return error.UninitializedLayerShell;
 
         self.display = c.eglGetDisplay(

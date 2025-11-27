@@ -8,9 +8,12 @@ const WindowManager = @import("window/manager.zig").WindowManager;
 const WindowConfig = @import("window/config.zig").WindowConfig;
 const FLWindow = @import("window/window.zig").FLWindow;
 const get_aot_data = @import("flutter/aot.zig").get_aot_data;
-const create_renderer_config = @import("flutter/renderer_config.zig").create_renderer_config;
-const create_flutter_compositor = @import("flutter/compositor.zig").create_flutter_compositor;
-const platform_message_callback = @import("./channels/message_callback.zig").platform_message_callback;
+const create_renderer_config = @import("flutter/renderer_config.zig")
+    .create_renderer_config;
+const create_flutter_compositor = @import("flutter/compositor.zig")
+    .create_flutter_compositor;
+const platform_message_callback = @import("./channels/message_callback.zig")
+    .platform_message_callback;
 const wl_registry_listener = @import("./listeners/registry.zig").wl_registry_listener;
 const wl_keyboard_listener = @import("./keyboard/listener.zig").wl_keyboard_listener;
 const wl_pointer_listener = @import("./pointer/listener.zig").wl_pointer_listener;
@@ -27,7 +30,7 @@ pub const FLEmbedder = struct {
     registry: *c.wl_registry = undefined,
 
     //Wayland Seat
-    seat: *c.struct_wl_seat = undefined,
+    seat: ?*c.struct_wl_seat = null,
 
     ///A struct to manage everything related to egl-wayland
     windows: WindowManager = WindowManager{},
@@ -76,7 +79,7 @@ pub const FLEmbedder = struct {
         // Round-trip to get the global objects
         _ = c.wl_display_roundtrip(self.wl_display);
 
-        if (self.seat == undefined)
+        if (self.seat == null)
             return error.UninitializedWaylandSeat;
 
         try self.windows.init(self.wl_display);
@@ -88,7 +91,7 @@ pub const FLEmbedder = struct {
         //does need to create a xkb context, whatever that means
         try self.keyboard.init(&self.engine);
 
-        const pointer = c.wl_seat_get_pointer(self.seat) orelse {
+        const pointer = c.wl_seat_get_pointer(self.seat.?) orelse {
             std.debug.print("Failed to retrieve a pointer", .{});
             return error.ErrorRetrievingPointer;
         };
@@ -99,7 +102,7 @@ pub const FLEmbedder = struct {
             self,
         );
 
-        const keyboard = c.wl_seat_get_keyboard(self.seat) orelse {
+        const keyboard = c.wl_seat_get_keyboard(self.seat.?) orelse {
             std.debug.print("Failed to retrieve a pointer", .{});
             return error.ErrorRetrievingPointer;
         };
@@ -283,10 +286,15 @@ pub const FLEmbedder = struct {
 
 //Empty callback called after a flutter view is created, maybe for other channels?
 //Like for channels other than the normal channels
-pub fn add_view_callback(_: [*c]const c.FlutterAddViewResult) callconv(.C) void {}
+pub fn add_view_callback(
+    _: [*c]const c.FlutterAddViewResult,
+) callconv(.C) void {}
 
-pub fn remove_view_callback(_: [*c]const c.FlutterRemoveViewResult) callconv(.C) void {}
+pub fn remove_view_callback(
+    _: [*c]const c.FlutterRemoveViewResult,
+) callconv(.C) void {}
 //I have no idea what this is for
+//
 fn channel_update_callback(
     _: [*c]const c.FlutterChannelUpdate,
     _: ?*anyopaque,
@@ -301,6 +309,10 @@ pub fn compute_platform_resolved_locale_callback(
     return locales[0];
 }
 
-pub fn log_message_callback(tag: [*c]const u8, message: [*c]const u8, _: ?*anyopaque) callconv(.C) void {
+pub fn log_message_callback(
+    tag: [*c]const u8,
+    message: [*c]const u8,
+    _: ?*anyopaque,
+) callconv(.C) void {
     std.debug.print("{s}: {s}\n", .{ tag, message });
 }

@@ -205,7 +205,9 @@ pub const KEY_PAUSECD = 201;
 pub const KEY_PROG3 = 202;
 pub const KEY_PROG4 = 203;
 pub const KEY_ALL_APPLICATIONS = 204;
-// pub const KEY_DASHBOARD =	KEY_ALL_APPLICATIONS;
+
+
+// pub const KEY_DASHBOARD = KEY_ALL_APPLICATIONS;
 pub const KEY_SUSPEND = 205;
 pub const KEY_CLOSE = 206;
 pub const KEY_PLAY = 207;
@@ -253,6 +255,6 @@ pub const KEY_BRIGHTNESS_AUTO = 244;
 // pub const KEY_BRIGHTNESS_ZERO = KEY_BRIGHTNESS_AUTO;
 pub const KEY_DISPLAY_OFF = 245;
 pub const KEY_WWAN = 246;
-// pub const KEY_WIMAX =	KEY_WWAN;
+// pub const KEY_WIMAX = KEY_WWAN;
 pub const KEY_RFKILL = 247;
 pub const KEY_MICMUTE = 248;
