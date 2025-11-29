@@ -35,36 +35,6 @@ pub const FLEmbedder = struct {
     view_surface_map: std.AutoHashMap(*c.struct_wl_surface, i64) = undefined,
 
     pub fn init(self: *FLEmbedder, path: *[:0]u8) !void {
-        const alloc = self.gpa.allocator();
-
-        self.wl_display = c.wl_display_connect(null) orelse {
-            return error.WaylandConnectionFailed;
-        };
-
-        self.registry = c.wl_display_get_registry(self.wl_display) orelse {
-            return error.RegistryFailed;
-        };
-
-        const reg_result = c.wl_registry_add_listener(
-            self.registry,
-            &wl_registry_listener,
-            self,
-        );
-        if (reg_result < 0) {
-            return error.MissingGlobalObjects;
-        }
-
-        // Round-trip to get the global objects
-        _ = c.wl_display_roundtrip(self.wl_display);
-
-        if (self.seat == null)
-            return error.UninitializedWaylandSeat;
-
-        try self.windows.init(self.wl_display);
-
-        //Create a dispatch Wayland loop
-        _ = try std.Thread.spawn(.{}, wl_loop, .{self.wl_display});
-
         //Mouse doesn't need to be initialized but keyboard
         //does need to create a xkb context, whatever that means
         try self.keyboard.init(&self.engine);

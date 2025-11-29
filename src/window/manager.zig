@@ -20,23 +20,20 @@ const ctx_attrib: [*c]c.EGLint = @constCast(&[_]c.EGLint{
 });
 
 pub const WindowManager = struct {
-    //move to an inmutable struct
     mux: std.Thread.RwLock = std.Thread.RwLock{},
     gpa: std.heap.GeneralPurposeAllocator(.{}) =
         std.heap.GeneralPurposeAllocator(.{}){},
 
-    engine: ?*YaraEngine = null,
-
+    engine: *YaraEngine = undefined,
     compositor: ?*c.wl_compositor = null,
     layer_shell: ?*c.zwlr_layer_shell_v1 = null,
     ///EGL display
-    display: c.EGLDisplay = null,
-    config: c.EGLConfig = null,
+    display: c.EGLDisplay = undefined,
+    config: c.EGLConfig = undefined,
     context: c.EGLContext = undefined,
     resource_context: c.EGLContext = undefined,
 
-    pub fn init(self: *WindowManager, engine: *YaraEngine) !void {
-        self.engine = engine;
+    pub fn init(self: *WindowManager) !void {
 
         if (self.compositor == null)
             return error.UninitializedWaylandCompositor;
@@ -45,24 +42,22 @@ pub const WindowManager = struct {
             return error.UninitializedLayerShell;
 
         self.display = c.eglGetDisplay(
-            engine.platform.display.?,
+            self.engine.platform.display,
         );
 
         if (self.display == c.EGL_NO_DISPLAY)
             return error.eglGetDisplayFailed;
 
         std.debug.print("Got the EGL display\n", .{});
-
         if (c.eglInitialize(self.display, null, null) != c.EGL_TRUE)
             return error.eglInitializeFailed;
 
         std.debug.print("Initialized EGL properly\n", .{});
-
         if (c.eglBindAPI(c.EGL_OPENGL_ES_API) != c.EGL_TRUE) {
             return error.eglbindfailed;
         }
-        std.debug.print("API Bind was successful\n", .{});
 
+        std.debug.print("API Bind was successful\n", .{});
         var num_config: c.EGLint = 0;
         const conf_result = c.eglChooseConfig(
             self.display,
@@ -89,7 +84,6 @@ pub const WindowManager = struct {
         }
 
         std.debug.print("Successfully created EGL Context\n", .{});
-
         self.resource_context = c.eglCreateContext(
             self.display,
             self.config,
@@ -98,10 +92,8 @@ pub const WindowManager = struct {
         );
 
         if (self.resource_context == c.EGL_NO_CONTEXT) {
-            std.debug.print("Failed to create the EGL resource_context\n", .{});
             return error.EglResourceContextFailed;
         }
-
         std.debug.print("Successfully created EGL Resource Context\n", .{});
     }
 };

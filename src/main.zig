@@ -10,8 +10,7 @@ pub fn main() anyerror!void {
         return error.InvalidArguments;
     }
 
-    var engine = YaraEngine{};
-    try engine.init(&args[1]);
+    var engine = try YaraEngine.init(&args[1]);
 
     engine.run() catch |err| {
         std.debug.print(
