@@ -6,7 +6,7 @@ const Task = struct {
     task: c.FlutterTask,
 };
 
-pub fn create_fl_runner(runner: *FLTaskRunner) c.FlutterTaskRunnerDescription {
+pub fn create_fl_runner(runner: *FlutterTaskRunner) c.FlutterTaskRunnerDescription {
     return c.FlutterTaskRunnerDescription{
         .struct_size = @sizeOf(c.FlutterTaskRunnerDescription),
         .runs_task_on_current_thread_callback = @ptrCast(&runs_task_on_current_thread),
@@ -16,14 +16,14 @@ pub fn create_fl_runner(runner: *FLTaskRunner) c.FlutterTaskRunnerDescription {
     };
 }
 
-pub const FLTaskRunner = struct {
+pub const FlutterTaskRunner = struct {
     thread: usize = undefined,
     alloc: std.mem.Allocator = undefined,
     engine: *c.FlutterEngine = undefined,
     queue: std.PriorityQueue(Task, void, cmp) = undefined,
 
     pub fn init(
-        self: *FLTaskRunner,
+        self: *FlutterTaskRunner,
         _: std.mem.Allocator,
         thread: usize,
         engine: *c.FlutterEngine,
@@ -34,11 +34,11 @@ pub const FLTaskRunner = struct {
         self.engine = engine;
     }
 
-    pub fn post_task(self: *FLTaskRunner, task: Task) !void {
+    pub fn post_task(self: *FlutterTaskRunner, task: Task) !void {
         try self.queue.add(task);
     }
 
-    pub fn run_next_task(self: *FLTaskRunner) void {
+    pub fn run_next_task(self: *FlutterTaskRunner) void {
         const frame_delay = std.time.ns_per_s / 60;
         var task = self.queue.peek() orelse {
             std.time.sleep(frame_delay);
@@ -54,7 +54,7 @@ pub const FLTaskRunner = struct {
         self.run_flutter_task(task.task);
     }
 
-    fn run_flutter_task(self: *FLTaskRunner, task: c.FlutterTask) void {
+    fn run_flutter_task(self: *FlutterTaskRunner, task: c.FlutterTask) void {
         const result = c.FlutterEngineRunTask(self.engine.*, &task);
         if (result != c.kSuccess) {
             std.debug.print("Error running the task {?}\n ", .{task});
@@ -67,13 +67,13 @@ pub const FLTaskRunner = struct {
 };
 
 pub fn post_task_callback(task: c.FlutterTask, time: u64, data: ?*anyopaque) callconv(.C) void {
-    const runner: *FLTaskRunner = @ptrCast(@alignCast(data));
+    const runner: *FlutterTaskRunner = @ptrCast(@alignCast(data));
     runner.post_task(Task{ .time = time, .task = task }) catch |err| {
         std.debug.print("Error posting task: {}\n", .{err});
     };
 }
 
 pub fn runs_task_on_current_thread(data: ?*anyopaque) callconv(.C) bool {
-    const runner: *FLTaskRunner = @ptrCast(@alignCast(data));
+    const runner: *FlutterTaskRunner = @ptrCast(@alignCast(data));
     return std.Thread.getCurrentId() == runner.thread;
 }

@@ -1,14 +1,14 @@
 const std = @import("std");
 const PlatformManager = @import("platform//manager.zig").PlatformManager;
 const WindowManager = @import("window/manager.zig").WindowManager;
+const FlutterManager = @import("flutter/manager.zig").FlutterManager;
 
 pub const YaraEngine = struct {
     platform: PlatformManager,
     windows: WindowManager,
-    gpa: std.heap.GeneralPurposeAllocator(.{}) =
-        std.heap.GeneralPurposeAllocator(.{}){},
+    flutter: FlutterManager,
 
-    pub fn init(_: *[:0]u8) !YaraEngine {
+    pub fn init(path: *[:0]u8) !YaraEngine {
         var engine = YaraEngine{
             .platform = undefined,
             .windows = undefined,
@@ -16,9 +16,11 @@ pub const YaraEngine = struct {
 
         engine.platform = PlatformManager{ .engine = &engine };
         engine.windows = WindowManager{ .engine = &engine };
+        engine.flutter = FlutterManager{ .engine = &engine };
 
         try engine.platform.init();
         try engine.windows.init();
+        try engine.flutter.init(path);
         return engine;
     }
     pub fn run(_: *YaraEngine) !void {}
