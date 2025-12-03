@@ -1,11 +1,13 @@
-
 const YaraEngine = @import("../../engine.zig").YaraEngine;
 const c = @import("../../utils/c_imports.zig").c;
+const wl_keyboard_listener = @import("./listener.zig").wl_keyboard_listener;
 const std = @import("std");
 
 pub const KeyboardManager = struct {
-    pub fn init(_: *KeyboardManager) !void {
-        const keyboard = c.wl_seat_get_keyboard(self.seat.?) orelse {
+    engine: *YaraEngine,
+
+    pub fn init(self: *KeyboardManager) !void {
+        const keyboard = c.wl_seat_get_keyboard(self.engine.plaform.seat.?) orelse {
             std.debug.print("Failed to retrieve a pointer", .{});
             return error.ErrorRetrievingPointer;
         };

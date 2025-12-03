@@ -1,7 +1,7 @@
 const std = @import("std");
-const c = @import("../c_imports.zig").c;
-const WindowConfig = @import("config.zig").WindowConfig;
-const WindowManager = @import("manager.zig").WindowManager;
+const c = @import("../../utils/c_imports.zig").c;
+const WindowConfig = @import("./config.zig").WindowConfig;
+const WindowManager = @import("./manager.zig").WindowManager;
 
 const ctx_attrib: [*c]c.EGLint = @constCast(&[_]c.EGLint{
     c.EGL_CONTEXT_CLIENT_VERSION, 2,
@@ -16,7 +16,6 @@ pub const Window = struct {
     window: *c.struct_wl_egl_window = null,
     wl_layer_surface: *c.zwlr_layer_surface_v1 = null,
     surface: c.EGLSurface = undefined,
-
 
     pub fn init(
         self: *Window,

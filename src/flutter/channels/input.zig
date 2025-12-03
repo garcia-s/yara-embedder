@@ -1,13 +1,14 @@
 const std = @import("std");
-const c = @import("../c_imports.zig").c;
+const c = @import("../../utils/c_imports.zig").c;
 const MessageHandler = @import("../channels/handler.zig").MessageHandler;
-const FLEmbedder = @import("../embedder.zig").FLEmbedder;
+const YaraEngine = @import("../../engine.zig").YaraEngine;
 const TextInputClient = @import("messages.zig").TextInputClient;
 const EditingValue = @import("messages.zig").EditingValue;
 
+
 const TextInputHandler = *const fn (
     *const ?std.json.Value,
-    *FLEmbedder,
+    *YaraEngine,
     ?*const c.FlutterPlatformMessageResponseHandle,
 ) anyerror!void;
 
@@ -25,7 +26,7 @@ const textinput_channel = std.StaticStringMap(TextInputHandler).initComptime(.{
 
 pub fn textinput_channel_handler(
     message: []const u8,
-    embedder: *FLEmbedder,
+    engine: *YaraEngine,
     handle: ?*const c.FlutterPlatformMessageResponseHandle,
 ) anyerror!void {
     var gp = std.heap.GeneralPurposeAllocator(.{}){};
@@ -40,7 +41,7 @@ pub fn textinput_channel_handler(
 
     defer p.deinit();
     const m = p.value.object.get("method") orelse {
-        return send_empty_response(embedder, handle);
+        return send_empty_response(engine, handle);
     };
 
     const args = p.value.object.get("args");
@@ -48,7 +49,7 @@ pub fn textinput_channel_handler(
     const method = textinput_channel.get(m.string) orelse {
         const data = "";
         _ = c.FlutterEngineSendPlatformMessageResponse(
-            embedder.engine,
+            engine.engine,
             handle,
             data.ptr,
             data.len,
@@ -56,72 +57,72 @@ pub fn textinput_channel_handler(
         return;
     };
     //
-    try method(&args, embedder, handle);
+    try method(&args, engine, handle);
 }
 
 pub fn set_editing_state(
     args: *const ?std.json.Value,
-    embedder: *FLEmbedder,
+    engine: *YaraEngine,
     handle: ?*const c.FlutterPlatformMessageResponseHandle,
 ) anyerror!void {
     const a = args.* orelse {
-        return send_empty_response(embedder, handle);
+        return send_empty_response(engine, handle);
     };
 
     const p = std.json.parseFromValue(
         EditingValue,
-        embedder.keyboard.input.gp.allocator(),
+        engine.keyboard.input.gp.allocator(),
         a,
         .{ .ignore_unknown_fields = true },
     ) catch return send_empty_response(
-        embedder,
+        engine,
         handle,
     );
 
-    embedder.keyboard.input.editing_value = p.value;
-    return send_empty_response(embedder, handle);
+    engine.keyboard.input.editing_value = p.value;
+    return send_empty_response(engine, handle);
 }
 
 pub fn set_client(
     args: *const ?std.json.Value,
-    embedder: *FLEmbedder,
+    engine: *YaraEngine,
     handle: ?*const c.FlutterPlatformMessageResponseHandle,
 ) anyerror!void {
     const a = args.* orelse {
-        return send_empty_response(embedder, handle);
+        return send_empty_response(engine, handle);
     };
 
-    embedder.keyboard.input.current_id = a.array.items[0].integer;
+    engine.keyboard.input.current_id = a.array.items[0].integer;
 
     const p = std.json.parseFromValue(
         TextInputClient,
-        embedder.keyboard.input.gp.allocator(),
+        engine.keyboard.input.gp.allocator(),
         a.array.items[1],
         .{ .ignore_unknown_fields = true },
     ) catch |e| {
         std.debug.print("Error parsing, {?}\n", .{e});
         return send_empty_response(
-            embedder,
+            engine,
             handle,
         );
     };
 
-    embedder.keyboard.input.text_client = p.value;
+    engine.keyboard.input.text_client = p.value;
 
     //TODO: Don't know if this is the way to respond
     return send_empty_response(
-        embedder,
+        engine,
         handle,
     );
 }
 
 pub fn send_empty_response(
-    embedder: *FLEmbedder,
+    engine: *YaraEngine,
     handle: ?*const c.FlutterPlatformMessageResponseHandle,
 ) void {
     const data = "[0]";
     _ = c.FlutterEngineSendPlatformMessageResponse(
-        embedder.engine,
+        engine.engine,
         handle,
         data.ptr,
         data.len,

@@ -1,7 +1,7 @@
-const c = @import("../c_imports.zig").c;
+const c = @import("../../utils/c_imports.zig").c;
 const std = @import("std");
-const FLWindow = @import("../window/window.zig").FLWindow;
-const FLEmbedder = @import("../embedder.zig").FLEmbedder;
+const Window = @import("../../window/window.zig").Window;
+const YaraEngine = @import("../../engine.zig").YaraEngine;
 
 pub const wl_pointer_listener = c.wl_pointer_listener{
     .leave = pointer_leave_handler,
@@ -20,7 +20,7 @@ pub fn pointer_enter_handler(
     _: i32,
     _: i32,
 ) callconv(.C) void {
-    const e: *FLEmbedder = @ptrCast(@alignCast(data));
+    const e: *YaraEngine = @ptrCast(@alignCast(data));
     e.pointer.event.view_id = e.view_surface_map.get(surface.?) orelse -1;
 }
 
@@ -32,7 +32,7 @@ pub fn pointer_leave_handler(
     _: u32,
     _: ?*c.struct_wl_surface,
 ) callconv(.C) void {
-    const e: *FLEmbedder = @ptrCast(@alignCast(data));
+    const e: *YaraEngine = @ptrCast(@alignCast(data));
 
     var event = &e.pointer.event;
     event.x = c.wl_fixed_to_double(0);
@@ -59,7 +59,7 @@ pub fn pointer_motion_handler(
     x: i32,
     y: i32,
 ) callconv(.C) void {
-    const e: *FLEmbedder = @ptrCast(@alignCast(data));
+    const e: *YaraEngine = @ptrCast(@alignCast(data));
 
     var event = &e.pointer.event;
     event.x = c.wl_fixed_to_double(x);
@@ -90,7 +90,7 @@ pub fn pointer_button_handler(
     //State of the button
     bt_state: u32,
 ) callconv(.C) void {
-    const e: *FLEmbedder = @ptrCast(@alignCast(data));
+    const e: *YaraEngine = @ptrCast(@alignCast(data));
 
     var event = &e.pointer.event;
     const btn_val: i64 = @as(i64, 1) << @intCast(btn - 272);
@@ -111,7 +111,7 @@ pub fn pointer_axis_handler(
     axis: u32, //Axis
     value: i32, //Axis value
 ) callconv(.C) void {
-    const e: *FLEmbedder = @ptrCast(@alignCast(data));
+    const e: *YaraEngine = @ptrCast(@alignCast(data));
     var event = &e.pointer.event;
     event.phase = c.kHover;
     event.signal_kind = c.kFlutterPointerSignalKindScroll;

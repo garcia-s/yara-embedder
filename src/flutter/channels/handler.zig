@@ -1,8 +1,8 @@
-const c = @import("../c_imports.zig").c;
-const FLEmbedder = @import("../embedder.zig").FLEmbedder;
+const c = @import("../../utils/c_imports.zig").c;
+const YaraEngine = @import("../../engine.zig").YaraEngine;
 
 pub const MessageHandler = *const fn (
     []const u8,
-    *FLEmbedder,
+    *YaraEngine,
     ?*const c.FlutterPlatformMessageResponseHandle,
 ) anyerror!void;

@@ -1,6 +1,6 @@
 const std = @import("std");
-const c = @import("../c_imports.zig").c;
-const KeyboardManager = @import("manager.zig").KeyboardManager;
+const c = @import("../../utils/c_imports.zig").c;
+const KeyboardManager = @import("./manager.zig").KeyboardManager;
 
 pub const wl_keyboard_listener = c.wl_keyboard_listener{
     .keymap = keyboard_keymap_handler,

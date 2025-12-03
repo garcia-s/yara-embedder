@@ -1,13 +1,13 @@
-const c = @import("../c_imports.zig").c;
+const c = @import("../utils/c_imports.zig").c;
 const std = @import("std");
-const FLEmbedder = @import("../embedder.zig").FLEmbedder;
+const YaraEngine = @import("../engine.zig").YaraEngine;
 const FLWindow = @import("../window/window.zig").FLWindow;
 
 pub const stubData = struct {
     fbo: *c_uint = undefined,
 };
 
-pub fn create_flutter_compositor(wl_egl: *FLEmbedder) c.FlutterCompositor {
+pub fn create_flutter_compositor(wl_egl: *YaraEngine) c.FlutterCompositor {
     return c.FlutterCompositor{
         .struct_size = @sizeOf(c.FlutterCompositor),
         .create_backing_store_callback = @ptrCast(&create_backing_store_callback),
@@ -118,7 +118,7 @@ pub fn create_backing_store_callback(
 pub fn destroy_callback(_: ?*anyopaque) callconv(.C) void {}
 
 pub fn present_view_callback(info: [*c]const c.FlutterPresentViewInfo) callconv(.C) bool {
-    const emb: *FLEmbedder = @ptrCast(@alignCast(info.*.user_data));
+    const emb: *YaraEngine = @ptrCast(@alignCast(info.*.user_data));
 
     const window: *FLWindow = emb.windows.get(info.*.view_id) orelse {
         return false;

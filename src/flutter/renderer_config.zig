@@ -1,6 +1,6 @@
-const c = @import("../c_imports.zig").c;
-const FLEmbedder = @import("../embedder.zig").FLEmbedder;
-const FLWindow = @import("../window/window.zig").FLWindow;
+const c = @import("../../utils/c_imports.zig").c;
+const YaraEngine = @import("../../engine/.zig").YaraEngine;
+const Window = @import("../window/window.zig").Window;
 const std = @import("std");
 
 pub fn create_renderer_config() c.FlutterOpenGLRendererConfig {
@@ -17,8 +17,8 @@ pub fn create_renderer_config() c.FlutterOpenGLRendererConfig {
 }
 
 pub fn make_current(data: ?*anyopaque) callconv(.C) bool {
-    const embedder: *FLEmbedder = @ptrCast(@alignCast(data));
-    const window: ?*FLWindow = embedder.windows.get(0);
+    const engine: *YaraEngine = @ptrCast(@alignCast(data));
+    const window: ?*Window = engine.windows.get(0);
     var surface: c.EGLSurface = c.EGL_NO_SURFACE;
 
     if (window != null) {
@@ -26,24 +26,26 @@ pub fn make_current(data: ?*anyopaque) callconv(.C) bool {
     }
 
     const result = c.eglMakeCurrent(
-        embedder.windows.display,
+        engine.windows.display,
         surface,
         surface,
-        embedder.windows.context,
+        engine.windows.context,
     );
 
-    if (result != c.EGL_TRUE) {
-        std.debug.print("ERROR MAKING THE SURFACE CONTEXT CURRENT: {x}\n", .{c.eglGetError()});
-        return false;
-    }
-    return true;
+    if (result == c.EGL_TRUE) return true;
+
+    std.debug.print(
+        "ERROR MAKING THE SURFACE CONTEXT CURRENT: {x}\n",
+        .{c.eglGetError()},
+    );
+    return false;
 }
 
 pub fn clear_current(data: ?*anyopaque) callconv(.C) bool {
-    const embedder: *FLEmbedder = @ptrCast(@alignCast(data));
+    const engine: *YaraEngine = @ptrCast(@alignCast(data));
 
     const result = c.eglMakeCurrent(
-        embedder.windows.display,
+        engine.windows.display,
         c.EGL_NO_SURFACE,
         c.EGL_NO_SURFACE,
         c.EGL_NO_CONTEXT,
@@ -57,12 +59,12 @@ pub fn clear_current(data: ?*anyopaque) callconv(.C) bool {
 }
 
 pub fn present(data: ?*anyopaque) callconv(.C) bool {
-    const embedder: *FLEmbedder = @ptrCast(@alignCast(data));
-    const window: *FLWindow = embedder.windows.get(0) orelse {
+    const engine: *YaraEngine = @ptrCast(@alignCast(data));
+    const window: *Window = engine.windows.get(0) orelse {
         return false;
     };
     _ = c.eglSwapBuffers(
-        embedder.windows.display,
+        engine.windows.display,
         window.surface,
     );
 
@@ -74,16 +76,15 @@ pub fn fbo_callback(_: ?*anyopaque) callconv(.C) u32 {
 }
 // resource context setup.
 pub fn make_resource_current(data: ?*anyopaque) callconv(.C) bool {
-    const embedder: *FLEmbedder = @ptrCast(@alignCast(data));
+    const engine: *YaraEngine = @ptrCast(@alignCast(data));
 
     const result = c.eglMakeCurrent(
-        embedder.windows.display,
+        engine.windows.display,
         c.EGL_NO_SURFACE,
         c.EGL_NO_SURFACE,
-        embedder.windows.resource_context,
+        engine.windows.resource_context,
     );
 
-    std.debug.print("Error?: {x}\n", .{c.eglGetError()});
     if (result == c.EGL_FALSE) {
         std.debug.print("Error MAKING RESOURCE CURRENT: {X}\n", .{c.eglGetError()});
         return false;

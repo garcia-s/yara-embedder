@@ -1,7 +1,7 @@
 const std = @import("std");
-const c = @import("../c_imports.zig").c;
-const FLEmbedder = @import("../embedder.zig").FLEmbedder;
-const WindowConfig = @import("../window/config.zig").WindowConfig;
+const c = @import("../utils/c_imports.zig").c;
+const YaraEngine = @import("../../engine.zig").YaraEngine;
+const WindowConfig = @import("../../window/config.zig").WindowConfig;
 const MessageHandler = @import("handler.zig").MessageHandler;
 
 const platform_channel = std.StaticStringMap(MessageHandler).initComptime(.{
@@ -11,7 +11,7 @@ const platform_channel = std.StaticStringMap(MessageHandler).initComptime(.{
 
 pub fn platform_channel_handler(
     str: []const u8,
-    embedder: *FLEmbedder,
+    embedder: *YaraEngine,
     handle: ?*const c.FlutterPlatformMessageResponseHandle,
 ) !void {
     var gp = std.heap.GeneralPurposeAllocator(.{}){};
@@ -31,7 +31,7 @@ pub fn platform_channel_handler(
 
 fn add_view_handler(
     str: []const u8,
-    embedder: *FLEmbedder,
+    embedder: *YaraEngine,
     handle: ?*const c.FlutterPlatformMessageResponseHandle,
 ) !void {
     var p = std.json.parseFromSlice(
@@ -62,7 +62,7 @@ fn add_view_handler(
 
 fn remove_view_handler(
     str: []const u8,
-    embedder: *FLEmbedder,
+    embedder: *YaraEngine,
     handle: ?*const c.FlutterPlatformMessageResponseHandle,
 ) !void {
     var gp = std.heap.GeneralPurposeAllocator(.{}){};

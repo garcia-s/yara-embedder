@@ -8,6 +8,8 @@ const WindowManager = @import("window/manager.zig").WindowManager;
 const WindowConfig = @import("window/config.zig").WindowConfig;
 const FLWindow = @import("window/window.zig").FLWindow;
 const get_aot_data = @import("flutter/aot.zig").get_aot_data;
+
+
 const create_renderer_config = @import("flutter/renderer_config.zig")
     .create_renderer_config;
 const create_flutter_compositor = @import("flutter/compositor.zig")
@@ -15,7 +17,6 @@ const create_flutter_compositor = @import("flutter/compositor.zig")
 const platform_message_callback = @import("./channels/message_callback.zig")
     .platform_message_callback;
 const wl_registry_listener = @import("./listeners/registry.zig").wl_registry_listener;
-const wl_keyboard_listener = @import("./keyboard/listener.zig").wl_keyboard_listener;
 const wl_pointer_listener = @import("./pointer/listener.zig").wl_pointer_listener;
 const task = @import("flutter/task_runners.zig");
 
@@ -26,19 +27,10 @@ pub const FLEmbedder = struct {
     wl_display: *c.wl_display = undefined,
     registry: *c.wl_registry = undefined,
     seat: ?*c.struct_wl_seat = null,
-    windows: WindowManager = WindowManager{},
-    pointer: PointerManager = PointerManager{},
-    keyboard: KeyboardManager = KeyboardManager{},
     textinput: InputManager = InputManager{},
     runner: task.FLTaskRunner = task.FLTaskRunner{},
     view_surface_map: std.AutoHashMap(*c.struct_wl_surface, i64) = undefined,
 
-    pub fn init(self: *FLEmbedder, path: *[:0]u8) !void {
-        self.view_surface_map = std.AutoHashMap(
-            *c.struct_wl_surface,
-            i64,
-        ).init(alloc);
-    }
 
     pub fn run(self: *FLEmbedder) !void {
         _ = c.FlutterEngineRunInitialized(self.engine);

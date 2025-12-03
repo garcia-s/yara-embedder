@@ -1,21 +1,21 @@
 const YaraEngine = @import("../engine.zig").YaraEngine;
 const c = @import("../../utils/c_imports.zig").c;
 const std = @import("std");
-const create_renderer_config = @import("flutter/renderer_config.zig")
-    .create_renderer_config;
-const create_flutter_compositor = @import("flutter/compositor.zig")
-    .create_flutter_compositor;
-const platform_message_callback = @import("./channels/message_callback.zig")
-    .platform_message_callback;
+
+const create_renderer_config = @import("./renderer_config.zig") .create_renderer_config;
+const create_flutter_compositor = @import(".flutter/compositor.zig") .create_flutter_compositor;
+const platform_message_callback = @import("./channels/message_callback.zig") .platform_message_callback;
 const get_aot_data = @import("./get_aot.zig").get_aot_data;
+
 const task = @import("./task_runners.zig");
 
 pub const FlutterManager = struct {
-    engine: *YaraEngine,
-    _flutter: *.c.FlutterEngine = undefined,
     _gpa: std.heap.GeneralPurposeAllocator(.{}) =
         std.heap.GeneralPurposeAllocator(.{}){},
-    _runner: task.FLTaskRunner = task.FLTaskRunner{},
+    _runner: task.FlutterTaskRunner = task.FlutterTaskRunner{},
+
+    engine: *YaraEngine,
+    flutter_engine: *.c.FlutterEngine = undefined,
 
     pub fn init(self: *FlutterManager, path: *[:0]u8) !void {
         const alloc = self._gpa.allocator();

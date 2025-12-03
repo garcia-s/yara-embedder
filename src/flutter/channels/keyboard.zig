@@ -1,17 +1,17 @@
 const std = @import("std");
-const c = @import("../c_imports.zig").c;
-const MessageHandler = @import("handler.zig").MessageHandler;
-const FLEmbedder = @import("../embedder.zig").FLEmbedder;
+const c = @import("../../utils/c_imports.zig").c;
+const MessageHandler = @import("./handler.zig").MessageHandler;
+const YaraEngine = @import("../../engine.zig").YaraEngine;
 
 pub fn keyboard_channel_handler(
     message: []const u8,
-    embedder: *FLEmbedder,
+    engine: *YaraEngine,
     handle: ?*const c.FlutterPlatformMessageResponseHandle,
 ) anyerror!void {
     const method = keyboard_channel.get(message) orelse {
         return error.NullMethodCall;
     };
-    try method(message, embedder, handle);
+    try method(message, engine, handle);
 }
 
 const keyboard_channel = std.StaticStringMap(MessageHandler).initComptime(.{
@@ -20,7 +20,7 @@ const keyboard_channel = std.StaticStringMap(MessageHandler).initComptime(.{
 
 pub fn get_keyboard_state(
     _: []const u8,
-    embedder: *FLEmbedder,
+    embedder: *YaraEngine,
     handle: ?*const c.FlutterPlatformMessageResponseHandle,
 ) anyerror!void {
     const data = "{}";

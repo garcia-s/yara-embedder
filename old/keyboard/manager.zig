@@ -1,4 +1,4 @@
-const c = @import("../c_imports.zig").c;
+const c = @import("../utils/c_imports.zig").c;
 const std = @import("std");
 const TextInputClient = @import("../textinput/messages.zig").TextInputClient;
 const EditingValue = @import("../textinput/channel.zig").EditingValue;
@@ -30,7 +30,6 @@ pub const KeyboardManager = struct {
             return error.FailedTocreateKeyboardContext;
         }
     }
-
 
     pub fn dispatch_key(
         self: *KeyboardManager,

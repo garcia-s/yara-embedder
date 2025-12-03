@@ -12,8 +12,8 @@ pub const PlatformManager = struct {
     registry: *c.wl_registry = undefined,
     seat: ?*c.struct_wl_seat = null,
 
-    keyboard: KeyboardManager = KeyboardManager{},
-    pointer: PointerManager = PointerManager{},
+    keyboard: KeyboardManager = undefined,
+    pointer: PointerManager = undefined,
 
     pub fn init(self: *PlatformManager) !void {
         self.display = c.wl_display_connect(null) orelse {
