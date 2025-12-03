@@ -30,6 +30,7 @@ flutter_hash=$(flutter --version --machine | jq -r '.engineContentHash')
 curl "https://storage.googleapis.com/flutter_infra_release/flutter/$flutter_hash/linux-x64/linux-x64-embedder.zip" -o  /tmp/linux-x64-embedder.zip
 
 unzip /tmp/linux-x64-embedder.zip -d /tmp
+mkdir ./engine
 mv /tmp/flutter_embedder.h ./engine
 mv /tmp/libflutter_engine.so ./engine
 
