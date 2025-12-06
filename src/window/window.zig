@@ -12,10 +12,10 @@ const surface_attrib = [_]c.EGLint{c.EGL_NONE};
 
 pub const FLWindow = struct {
     config: WindowConfig,
-    wl_surface: *c.struct_wl_surface = undefined,
-    window: *c.struct_wl_egl_window = undefined,
-    wl_layer_surface: *c.zwlr_layer_surface_v1 = undefined,
-    surface: c.EGLSurface = undefined,
+    wl_surface: ?*c.struct_wl_surface = null,
+    window: ?*c.struct_wl_egl_window = null,
+    wl_layer_surface: ?*c.zwlr_layer_surface_v1 = null,
+    surface: ?c.EGLSurface = null,
 
     pub fn init(
         self: *FLWindow,
