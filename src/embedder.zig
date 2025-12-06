@@ -21,19 +21,19 @@ pub const FLEmbedder = struct {
     gpa: std.heap.GeneralPurposeAllocator(.{}) =
         std.heap.GeneralPurposeAllocator(.{}){},
     ///Wayland display
-    wl_display: *c.wl_display = undefined,
+    wl_display: ?*c.wl_display = null,
 
     ///Wayland Registry
-    registry: *c.wl_registry = undefined,
+    registry: ?*c.wl_registry = null,
 
     //Wayland Seat
-    seat: *c.struct_wl_seat = undefined,
+    seat: ?*c.struct_wl_seat = null,
+
+    ///Flutter engine instance
+    engine: ?c.FlutterEngine = null,
 
     ///A struct to manage everything related to egl-wayland
     windows: WindowManager = WindowManager{},
-
-    ///Flutter engine instance
-    engine: c.FlutterEngine = undefined,
 
     ///Manager for the pointer events
     pointer: PointerManager = PointerManager{},
@@ -76,7 +76,7 @@ pub const FLEmbedder = struct {
         // Round-trip to get the global objects
         _ = c.wl_display_roundtrip(self.wl_display);
 
-        if (self.seat == undefined)
+        if (self.seat == null)
             return error.UninitializedWaylandSeat;
 
         try self.windows.init(self.wl_display);

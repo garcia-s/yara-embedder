@@ -6,7 +6,7 @@ pub fn build(b: *std.Build) void {
     const exe = b.addExecutable(.{
         .name = "yarad",
         .root_source_file = b.path("src/main.zig"),
-        .target = b.host,
+        .target = b.graph.host,
     });
 
     exe.linkLibC();
